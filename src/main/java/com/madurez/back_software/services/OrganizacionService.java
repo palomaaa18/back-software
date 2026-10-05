@@ -8,4 +8,6 @@ import java.util.List;
 public interface OrganizacionService {
 
     List<OrganizacionResponse> listarOrganizaciones(Usuario ejecutor);
+
+    OrganizacionResponse obtenerMiOrganizacion(Usuario ejecutor);
 }

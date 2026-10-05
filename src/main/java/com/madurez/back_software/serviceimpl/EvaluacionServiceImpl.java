@@ -31,35 +31,18 @@ public class EvaluacionServiceImpl implements EvaluacionService {
     @Autowired
     private RespuestaRepository respuestaRepository;
 
+    @Autowired
+    private ResultadoService resultadoService;
+
     @Override
-    public EvaluacionResponse iniciarEvaluacion(IniciarEvaluacionRequest request, Usuario analista) {
+    public EvaluacionResponse iniciarEvaluacion(Usuario analista) {
         if (analista.getRol() != Rol.ANALISTA_CIBERSEGURIDAD) {
             throw new IllegalArgumentException("Solo un Analista de ciberseguridad puede iniciar una evaluación");
         }
 
-        Organizacion organizacion;
-
-        if (request.getOrganizacionId() != null) {
-            // HU0014 esc.3: organización ya existente -> nueva evaluación sobre ella
-            organizacion = organizacionRepository.findById(request.getOrganizacionId())
-                    .orElseThrow(() -> new IllegalArgumentException("Organización no encontrada"));
-        } else {
-            // HU0014 esc.1/2: registrar organización nueva
-            if (request.getNombreOrganizacion() == null || request.getNombreOrganizacion().isBlank()
-                    || request.getSector() == null || request.getSector().isBlank()) {
-                throw new IllegalArgumentException("Nombre y sector de la organización son obligatorios");
-            }
-
-            if (organizacionRepository.existsByNombre(request.getNombreOrganizacion())) {
-                throw new IllegalArgumentException(
-                        "Ya existe una organización con ese nombre. Use su id para iniciar una nueva evaluación sobre ella.");
-            }
-
-            organizacion = new Organizacion();
-            organizacion.setNombre(request.getNombreOrganizacion());
-            organizacion.setSector(request.getSector());
-            organizacion.setPlataformaTextToSql(request.getPlataformaTextToSql());
-            organizacion = organizacionRepository.save(organizacion);
+        if (analista.getOrganizacion() == null) {
+            throw new IllegalArgumentException(
+                    "Tu cuenta no tiene una organización asignada. Contacta a tu Jefe de ciberseguridad");
         }
 
         InstrumentoVersion versionVigente = instrumentoVersionRepository.findByVigenteTrue()
@@ -67,7 +50,7 @@ public class EvaluacionServiceImpl implements EvaluacionService {
                         "No hay una versión vigente del instrumento configurada"));
 
         Evaluacion evaluacion = new Evaluacion();
-        evaluacion.setOrganizacion(organizacion);
+        evaluacion.setOrganizacion(analista.getOrganizacion());
         evaluacion.setAnalista(analista);
         evaluacion.setJefe(analista.getJefe());
         evaluacion.setInstrumentoVersion(versionVigente);
@@ -113,12 +96,10 @@ public class EvaluacionServiceImpl implements EvaluacionService {
         evaluacion.setFechaFin(LocalDateTime.now());
         evaluacionRepository.save(evaluacion);
         resultadoService.calcularYGuardarResultado(evaluacion.getId());
-        // nivel de madurez) lo hacemos en el siguiente paso, en ResultadoService,
-        // disparado justo después de este cambio de estado.
     }
 
     // Válida que quien consulta/modifica la evaluación sea el analista dueño
-    // o su jefe directo (para HU0027 más adelante)
+    // o su jefe directo
     private Evaluacion buscarYValidarAcceso(Long evaluacionId, Usuario ejecutor) {
         Evaluacion evaluacion = evaluacionRepository.findById(evaluacionId)
                 .orElseThrow(() -> new IllegalArgumentException("Evaluación no encontrada"));
@@ -141,8 +122,7 @@ public class EvaluacionServiceImpl implements EvaluacionService {
                 e.getObservacion()
         );
     }
-    @Autowired
-    private ResultadoService resultadoService;
+
     @Override
     public EvaluacionResponse validarEvaluacion(Long evaluacionId, Usuario jefe) {
         if (jefe.getRol() != Rol.JEFE_CIBERSEGURIDAD) {
@@ -183,22 +163,20 @@ public class EvaluacionServiceImpl implements EvaluacionService {
         Evaluacion guardada = evaluacionRepository.save(evaluacion);
 
         return mapearAResponse(guardada);
-
-        // Nota: la notificación real al analista (HU0027 esc.2 dice "notifica al
-        // analista responsable") la dejamos como polling desde el frontend por ahora
-        // (el analista ve el estado "Observada" en GET /api/evaluaciones/mias).
-        // Si más adelante quieres notificaciones push/email, lo agregamos aparte.
     }
+
     @Override
-    public EvaluacionResponse iniciarReevaluacion(Long organizacionId, Usuario analista) {
+    public EvaluacionResponse iniciarReevaluacion(Usuario analista) {
         if (analista.getRol() != Rol.ANALISTA_CIBERSEGURIDAD) {
             throw new IllegalArgumentException("Solo un Analista de ciberseguridad puede iniciar una reevaluación");
         }
 
-        Organizacion organizacion = organizacionRepository.findById(organizacionId)
-                .orElseThrow(() -> new IllegalArgumentException("Organización no encontrada"));
+        if (analista.getOrganizacion() == null) {
+            throw new IllegalArgumentException("Tu cuenta no tiene una organización asignada");
+        }
 
-        // HU0032 esc.2: debe existir al menos una evaluación finalizada previa
+        Long organizacionId = analista.getOrganizacion().getId();
+
         boolean tieneEvaluacionPrevia = !evaluacionRepository
                 .findByOrganizacionIdAndFechaFinIsNotNullOrderByFechaFinDesc(organizacionId).isEmpty();
 
@@ -211,7 +189,7 @@ public class EvaluacionServiceImpl implements EvaluacionService {
                 .orElseThrow(() -> new IllegalArgumentException("No hay una versión vigente del instrumento configurada"));
 
         Evaluacion evaluacion = new Evaluacion();
-        evaluacion.setOrganizacion(organizacion);
+        evaluacion.setOrganizacion(analista.getOrganizacion());
         evaluacion.setAnalista(analista);
         evaluacion.setJefe(analista.getJefe());
         evaluacion.setInstrumentoVersion(versionVigente);
@@ -221,6 +199,7 @@ public class EvaluacionServiceImpl implements EvaluacionService {
 
         return mapearAResponse(guardada);
     }
+
     @Override
     public List<EvaluacionResponse> listarEvaluacionesEquipo(Usuario jefe) {
         if (jefe.getRol() != Rol.JEFE_CIBERSEGURIDAD) {

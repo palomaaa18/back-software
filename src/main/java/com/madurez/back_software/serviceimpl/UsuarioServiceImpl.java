@@ -3,8 +3,10 @@ package com.madurez.back_software.serviceimpl;
 import com.madurez.back_software.dtos.CrearUsuarioRequest;
 import com.madurez.back_software.dtos.UsuarioResponse;
 import com.madurez.back_software.entities.EstadoUsuario;
+import com.madurez.back_software.entities.Organizacion;
 import com.madurez.back_software.entities.Rol;
 import com.madurez.back_software.entities.Usuario;
+import com.madurez.back_software.repositories.OrganizacionRepository;
 import com.madurez.back_software.repositories.UsuarioRepository;
 import com.madurez.back_software.services.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +26,10 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     @Autowired
     private EvaluacionRepository evaluacionRepository;
+
+    @Autowired
+    private OrganizacionRepository organizacionRepository;
+
     @Autowired
     private PasswordEncoder passwordEncoder;
 
@@ -54,6 +60,32 @@ public class UsuarioServiceImpl implements UsuarioService {
                 throw new IllegalArgumentException(
                         "El Administrador no registra analistas directamente; eso lo hace el Jefe de ciberseguridad");
             }
+
+            if (rolSolicitado == Rol.JEFE_CIBERSEGURIDAD) {
+                Organizacion organizacion;
+
+                if (request.getOrganizacionId() != null) {
+                    organizacion = organizacionRepository.findById(request.getOrganizacionId())
+                            .orElseThrow(() -> new IllegalArgumentException("Organización no encontrada"));
+                } else {
+                    if (request.getNombreOrganizacion() == null || request.getNombreOrganizacion().isBlank()) {
+                        throw new IllegalArgumentException(
+                                "Debe seleccionar una organización existente o indicar los datos de una nueva");
+                    }
+                    if (organizacionRepository.existsByNombre(request.getNombreOrganizacion())) {
+                        throw new IllegalArgumentException("Ya existe una organización con ese nombre");
+                    }
+
+                    organizacion = new Organizacion();
+                    organizacion.setNombre(request.getNombreOrganizacion());
+                    organizacion.setSector(request.getSectorOrganizacion());
+                    organizacion.setPlataformaTextToSql(request.getPlataformaOrganizacion());
+                    organizacion = organizacionRepository.save(organizacion);
+                }
+
+                nuevoUsuario.setOrganizacion(organizacion);
+            }
+
             nuevoUsuario.setRol(rolSolicitado);
 
         } else if (creador.getRol() == Rol.JEFE_CIBERSEGURIDAD) {
@@ -63,6 +95,7 @@ public class UsuarioServiceImpl implements UsuarioService {
             }
             nuevoUsuario.setRol(Rol.ANALISTA_CIBERSEGURIDAD);
             nuevoUsuario.setJefe(creador); // queda asociado automáticamente (HU0004)
+            nuevoUsuario.setOrganizacion(creador.getOrganizacion()); // hereda la org de su Jefe
 
         } else {
             throw new IllegalArgumentException("Tu rol no tiene permiso para crear usuarios");
@@ -76,7 +109,9 @@ public class UsuarioServiceImpl implements UsuarioService {
                 guardado.getEmail(),
                 guardado.getRol().name(),
                 guardado.getEstado().name(),
-                guardado.getJefe() != null ? guardado.getJefe().getId() : null
+                guardado.getJefe() != null ? guardado.getJefe().getId() : null,
+                guardado.getOrganizacion() != null ? guardado.getOrganizacion().getId() : null,
+                guardado.getOrganizacion() != null ? guardado.getOrganizacion().getNombre() : null
         );
     }
 
@@ -104,6 +139,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         usuario.setEstado(EstadoUsuario.INACTIVO);
         usuarioRepository.save(usuario);
     }
+
     @Override
     public List<UsuarioResponse> listarUsuarios(Usuario ejecutor) {
         if (ejecutor.getRol() != Rol.ADMINISTRADOR) {
@@ -113,7 +149,9 @@ public class UsuarioServiceImpl implements UsuarioService {
         return usuarioRepository.findAll().stream()
                 .map(u -> new UsuarioResponse(
                         u.getId(), u.getNombre(), u.getEmail(), u.getRol().name(),
-                        u.getEstado().name(), u.getJefe() != null ? u.getJefe().getId() : null
+                        u.getEstado().name(), u.getJefe() != null ? u.getJefe().getId() : null,
+                        u.getOrganizacion() != null ? u.getOrganizacion().getId() : null,
+                        u.getOrganizacion() != null ? u.getOrganizacion().getNombre() : null
                 ))
                 .collect(Collectors.toList());
     }

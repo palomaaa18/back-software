@@ -1,7 +1,6 @@
 package com.madurez.back_software.controllers;
 
 import com.madurez.back_software.dtos.EvaluacionResponse;
-import com.madurez.back_software.dtos.IniciarEvaluacionRequest;
 import com.madurez.back_software.dtos.ObservarEvaluacionRequest;
 import com.madurez.back_software.entities.Usuario;
 import com.madurez.back_software.security.UsuarioPrincipal;
@@ -21,10 +20,18 @@ public class EvaluacionController {
     private EvaluacionService evaluacionService;
 
     @PostMapping
-    public ResponseEntity<?> iniciarEvaluacion(@RequestBody IniciarEvaluacionRequest request,
-                                               @AuthenticationPrincipal UsuarioPrincipal principal) {
+    public ResponseEntity<?> iniciarEvaluacion(@AuthenticationPrincipal UsuarioPrincipal principal) {
         try {
-            return ResponseEntity.ok(evaluacionService.iniciarEvaluacion(request, principal.getUsuario()));
+            return ResponseEntity.ok(evaluacionService.iniciarEvaluacion(principal.getUsuario()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/reevaluar")
+    public ResponseEntity<?> iniciarReevaluacion(@AuthenticationPrincipal UsuarioPrincipal principal) {
+        try {
+            return ResponseEntity.ok(evaluacionService.iniciarReevaluacion(principal.getUsuario()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -33,6 +40,15 @@ public class EvaluacionController {
     @GetMapping("/mias")
     public ResponseEntity<List<EvaluacionResponse>> listarMisEvaluaciones(@AuthenticationPrincipal UsuarioPrincipal principal) {
         return ResponseEntity.ok(evaluacionService.listarMisEvaluaciones(principal.getUsuario()));
+    }
+
+    @GetMapping("/equipo")
+    public ResponseEntity<?> listarEvaluacionesEquipo(@AuthenticationPrincipal UsuarioPrincipal principal) {
+        try {
+            return ResponseEntity.ok(evaluacionService.listarEvaluacionesEquipo(principal.getUsuario()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @GetMapping("/{id}")
@@ -53,6 +69,7 @@ public class EvaluacionController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
     @PutMapping("/{id}/validar")
     public ResponseEntity<?> validarEvaluacion(@PathVariable Long id,
                                                @AuthenticationPrincipal UsuarioPrincipal principal) {
@@ -70,23 +87,6 @@ public class EvaluacionController {
         try {
             return ResponseEntity.ok(
                     evaluacionService.observarEvaluacion(id, request.getObservacion(), principal.getUsuario()));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-    @PostMapping("/reevaluar/{organizacionId}")
-    public ResponseEntity<?> iniciarReevaluacion(@PathVariable Long organizacionId,
-                                                 @AuthenticationPrincipal UsuarioPrincipal principal) {
-        try {
-            return ResponseEntity.ok(evaluacionService.iniciarReevaluacion(organizacionId, principal.getUsuario()));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-    @GetMapping("/equipo")
-    public ResponseEntity<?> listarEvaluacionesEquipo(@AuthenticationPrincipal UsuarioPrincipal principal) {
-        try {
-            return ResponseEntity.ok(evaluacionService.listarEvaluacionesEquipo(principal.getUsuario()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

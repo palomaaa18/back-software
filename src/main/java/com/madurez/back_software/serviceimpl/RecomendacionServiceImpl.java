@@ -22,6 +22,8 @@ import com.madurez.back_software.repositories.EvaluacionRepository;
 import com.madurez.back_software.repositories.RespuestaRepository;
 import java.util.List;
 import java.util.stream.Collectors;
+import com.madurez.back_software.dtos.RecomendacionPriorizadaResponse;
+import java.util.Comparator;
 
 @Service
 public class RecomendacionServiceImpl implements RecomendacionService {
@@ -119,5 +121,53 @@ public class RecomendacionServiceImpl implements RecomendacionService {
         }
 
         return sugeridas;
+    }
+    @Override
+    public List<RecomendacionPriorizadaResponse> obtenerPriorizadasPorEvaluacion(Long evaluacionId, Usuario ejecutor) {
+        Evaluacion evaluacion = evaluacionRepository.findById(evaluacionId)
+                .orElseThrow(() -> new IllegalArgumentException("Evaluación no encontrada"));
+
+        if (evaluacion.getEstado() == EstadoEvaluacion.EN_CURSO) {
+            throw new IllegalArgumentException("La evaluación aún no ha finalizado");
+        }
+
+        List<Respuesta> respuestas = respuestaRepository.findByEvaluacionId(evaluacionId);
+        List<RecomendacionPriorizadaResponse> resultado = new java.util.ArrayList<>();
+
+        for (Respuesta r : respuestas) {
+            NivelImplementacion nivel = r.getNivelImplementacion();
+
+            if (nivel != NivelImplementacion.NO_EXISTE && nivel != NivelImplementacion.EXISTE_PARCIALMENTE) {
+                continue;
+            }
+
+            String riesgo = nivel == NivelImplementacion.NO_EXISTE ? "ALTO" : "MEDIO";
+
+            recomendacionRepository.findByPreguntaIdAndNivel(r.getPregunta().getId(), nivel).ifPresent(rec -> {
+                Pregunta p = r.getPregunta();
+                // Tomamos el primer control de la pregunta para el desempate alfabético (HU023 esc.2)
+                String anexo = p.getControles().stream()
+                        .map(com.madurez.back_software.entities.Control::getAnexoA)
+                        .min(String::compareTo)
+                        .orElse("");
+
+                resultado.add(new RecomendacionPriorizadaResponse(
+                        p.getDominio().getNombre(),
+                        p.getDominio().getPesoRelativo(),
+                        riesgo,
+                        anexo,
+                        p.getTexto(),
+                        rec.getDescripcion()
+                ));
+            });
+        }
+
+        resultado.sort(
+                Comparator.comparing(RecomendacionPriorizadaResponse::getPesoDominio).reversed()
+                        .thenComparing(x -> x.getNivelRiesgo().equals("ALTO") ? 0 : 1)
+                        .thenComparing(RecomendacionPriorizadaResponse::getControlAnexoA)
+        );
+
+        return resultado;
     }
 }

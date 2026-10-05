@@ -43,4 +43,14 @@ public class RecomendacionController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+    @GetMapping("/evaluacion/{evaluacionId}/priorizadas")
+    public ResponseEntity<?> obtenerPriorizadas(@PathVariable Long evaluacionId,
+                                                @AuthenticationPrincipal UsuarioPrincipal principal) {
+        try {
+            return ResponseEntity.ok(
+                    recomendacionService.obtenerPriorizadasPorEvaluacion(evaluacionId, principal.getUsuario()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

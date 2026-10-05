@@ -8,14 +8,19 @@ public class UsuarioResponse {
     private String rol;
     private String estado;
     private Long jefeId;
+    private Long organizacionId;
+    private String organizacionNombre;
 
-    public UsuarioResponse(Long id, String nombre, String email, String rol, String estado, Long jefeId) {
+    public UsuarioResponse(Long id, String nombre, String email, String rol, String estado, Long jefeId,
+                           Long organizacionId, String organizacionNombre) {
         this.id = id;
         this.nombre = nombre;
         this.email = email;
         this.rol = rol;
         this.estado = estado;
         this.jefeId = jefeId;
+        this.organizacionId = organizacionId;
+        this.organizacionNombre = organizacionNombre;
     }
 
     public Long getId() { return id; }
@@ -24,4 +29,6 @@ public class UsuarioResponse {
     public String getRol() { return rol; }
     public String getEstado() { return estado; }
     public Long getJefeId() { return jefeId; }
+    public Long getOrganizacionId() { return organizacionId; }
+    public String getOrganizacionNombre() { return organizacionNombre; }
 }

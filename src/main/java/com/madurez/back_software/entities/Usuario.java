@@ -35,6 +35,9 @@ public class Usuario {
 
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion = LocalDateTime.now();
+    @ManyToOne
+    @JoinColumn(name = "organizacion_id")
+    private Organizacion organizacion;
 
     public Usuario() {}
 
@@ -62,4 +65,6 @@ public class Usuario {
 
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
     public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }
+    public Organizacion getOrganizacion() { return organizacion; }
+    public void setOrganizacion(Organizacion organizacion) { this.organizacion = organizacion; }
 }
