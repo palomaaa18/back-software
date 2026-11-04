@@ -117,12 +117,22 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     @Override
     public void desactivarUsuario(Long usuarioId, Usuario ejecutor) {
-        if (ejecutor.getRol() != Rol.ADMINISTRADOR) {
-            throw new IllegalArgumentException("Solo el Administrador puede desactivar cuentas");
+        if (ejecutor.getRol() != Rol.ADMINISTRADOR && ejecutor.getRol() != Rol.JEFE_CIBERSEGURIDAD) {
+            throw new IllegalArgumentException("Solo el Administrador o el Jefe de ciberseguridad pueden desactivar cuentas");
         }
 
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+
+        // El Jefe solo puede desactivar a los analistas de su propio equipo
+        if (ejecutor.getRol() == Rol.JEFE_CIBERSEGURIDAD) {
+            boolean esDeSuEquipo = usuario.getRol() == Rol.ANALISTA_CIBERSEGURIDAD
+                    && usuario.getJefe() != null
+                    && usuario.getJefe().getId().equals(ejecutor.getId());
+            if (!esDeSuEquipo) {
+                throw new IllegalArgumentException("Solo puedes desactivar a los analistas de tu equipo");
+            }
+        }
 
         // HU0003 esc.2: no permitir desactivar si tiene evaluaciones en curso
         // (aplica tanto si el usuario es Analista como si es Jefe con evaluaciones asignadas)
@@ -147,6 +157,23 @@ public class UsuarioServiceImpl implements UsuarioService {
         }
 
         return usuarioRepository.findAll().stream()
+                .map(u -> new UsuarioResponse(
+                        u.getId(), u.getNombre(), u.getEmail(), u.getRol().name(),
+                        u.getEstado().name(), u.getJefe() != null ? u.getJefe().getId() : null,
+                        u.getOrganizacion() != null ? u.getOrganizacion().getId() : null,
+                        u.getOrganizacion() != null ? u.getOrganizacion().getNombre() : null
+                ))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<UsuarioResponse> listarMiEquipo(Usuario jefe) {
+        if (jefe.getRol() != Rol.JEFE_CIBERSEGURIDAD) {
+            throw new IllegalArgumentException("Solo el Jefe de ciberseguridad puede ver su equipo");
+        }
+
+        return usuarioRepository.findByJefeId(jefe.getId()).stream()
+                .filter(u -> u.getRol() == Rol.ANALISTA_CIBERSEGURIDAD)
                 .map(u -> new UsuarioResponse(
                         u.getId(), u.getNombre(), u.getEmail(), u.getRol().name(),
                         u.getEstado().name(), u.getJefe() != null ? u.getJefe().getId() : null,
