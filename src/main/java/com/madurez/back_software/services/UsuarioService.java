@@ -12,4 +12,7 @@ public interface UsuarioService {
 
     void desactivarUsuario(Long usuarioId, Usuario ejecutor);
     List<UsuarioResponse> listarUsuarios(Usuario ejecutor);
+
+    // Analistas que pertenecen al Jefe de ciberseguridad que consulta
+    List<UsuarioResponse> listarMiEquipo(Usuario jefe);
 }

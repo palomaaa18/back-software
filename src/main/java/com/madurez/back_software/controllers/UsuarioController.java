@@ -48,4 +48,13 @@ public class UsuarioController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    @GetMapping("/mi-equipo")
+    public ResponseEntity<?> listarMiEquipo(@AuthenticationPrincipal UsuarioPrincipal principal) {
+        try {
+            return ResponseEntity.ok(usuarioService.listarMiEquipo(principal.getUsuario()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }
