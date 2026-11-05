@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -31,6 +32,9 @@ public class AuthController {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
             );
+        } catch (DisabledException e) {
+            // Cuenta desactivada: se distingue de una contraseña incorrecta
+            return ResponseEntity.status(403).body("Usuario inactivo, contacte al Jefe de Ciberseguridad");
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(401).body("Credenciales incorrectas");
         }
