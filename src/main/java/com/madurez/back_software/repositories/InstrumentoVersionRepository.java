@@ -8,4 +8,6 @@ import java.util.Optional;
 public interface InstrumentoVersionRepository extends JpaRepository<InstrumentoVersion, Long> {
 
     Optional<InstrumentoVersion> findByVigenteTrue();
+
+    java.util.List<InstrumentoVersion> findAllByOrderByNumeroVersionDesc();
 }

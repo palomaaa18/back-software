@@ -20,6 +20,10 @@ public class InstrumentoVersion {
     @Column(nullable = false)
     private boolean vigente = true;
 
+    // Nota que acompaña la publicación de la versión
+    @Column(columnDefinition = "TEXT")
+    private String nota;
+
     public InstrumentoVersion() {}
 
     public Long getId() { return id; }
@@ -30,6 +34,9 @@ public class InstrumentoVersion {
 
     public LocalDateTime getFechaPublicacion() { return fechaPublicacion; }
     public void setFechaPublicacion(LocalDateTime fechaPublicacion) { this.fechaPublicacion = fechaPublicacion; }
+
+    public String getNota() { return nota; }
+    public void setNota(String nota) { this.nota = nota; }
 
     public boolean isVigente() { return vigente; }
     public void setVigente(boolean vigente) { this.vigente = vigente; }

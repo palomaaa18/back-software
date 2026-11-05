@@ -1,5 +1,6 @@
 package com.madurez.back_software.controllers;
 
+import com.madurez.back_software.dtos.CambiarPasswordRequest;
 import com.madurez.back_software.dtos.CrearUsuarioRequest;
 import com.madurez.back_software.dtos.UsuarioResponse;
 import com.madurez.back_software.entities.Usuario;
@@ -53,6 +54,17 @@ public class UsuarioController {
     public ResponseEntity<?> listarMiEquipo(@AuthenticationPrincipal UsuarioPrincipal principal) {
         try {
             return ResponseEntity.ok(usuarioService.listarMiEquipo(principal.getUsuario()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/cambiar-password")
+    public ResponseEntity<?> cambiarPassword(@RequestBody CambiarPasswordRequest request,
+                                             @AuthenticationPrincipal UsuarioPrincipal principal) {
+        try {
+            usuarioService.cambiarPassword(request.getPasswordActual(), request.getPasswordNueva(), principal.getUsuario());
+            return ResponseEntity.ok("Contraseña actualizada correctamente");
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

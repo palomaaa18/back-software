@@ -13,6 +13,9 @@ public interface UsuarioService {
     void desactivarUsuario(Long usuarioId, Usuario ejecutor);
     List<UsuarioResponse> listarUsuarios(Usuario ejecutor);
 
+    // Cambia la contraseña del propio usuario (obligatorio en el primer inicio de sesión)
+    void cambiarPassword(String passwordActual, String passwordNueva, Usuario usuario);
+
     // Analistas que pertenecen al Jefe de ciberseguridad que consulta
     List<UsuarioResponse> listarMiEquipo(Usuario jefe);
 }

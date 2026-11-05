@@ -69,7 +69,7 @@ public class ControlServiceImpl implements ControlService {
 
     @Override
     public List<ControlResponse> listarControles() {
-        return controlRepository.findAll().stream()
+        return controlRepository.findByInstrumentoVersionId(obtenerVersionVigenteId()).stream()
                 .map(c -> new ControlResponse(
                         c.getId(), c.getNorma().name(), c.getAnexoA(),
                         c.getDominio().getId(), c.getDominio().getNombre()))
@@ -77,4 +77,14 @@ public class ControlServiceImpl implements ControlService {
     }
     @Autowired
     private AuditoriaTecnicaService auditoriaTecnicaService;
+
+    @Autowired
+    private com.madurez.back_software.repositories.InstrumentoVersionRepository instrumentoVersionRepository;
+
+    // El catalogo que se muestra y se evalua es el de la version vigente del instrumento
+    private Long obtenerVersionVigenteId() {
+        return instrumentoVersionRepository.findByVigenteTrue()
+                .orElseThrow(() -> new IllegalArgumentException("No hay una versión vigente del instrumento configurada"))
+                .getId();
+    }
 }

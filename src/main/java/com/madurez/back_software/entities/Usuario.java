@@ -33,6 +33,11 @@ public class Usuario {
     @JoinColumn(name = "jefe_id")
     private Usuario jefe;
 
+    // true hasta que el usuario cambia la contraseña asignada al crear la cuenta (primer inicio de sesión).
+    // Sin "not null" para que Hibernate pueda agregar la columna a una tabla con datos.
+    @Column(name = "debe_cambiar_password", columnDefinition = "boolean default false")
+    private Boolean debeCambiarPassword = false;
+
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion = LocalDateTime.now();
     @ManyToOne
@@ -62,6 +67,9 @@ public class Usuario {
 
     public Usuario getJefe() { return jefe; }
     public void setJefe(Usuario jefe) { this.jefe = jefe; }
+
+    public boolean isDebeCambiarPassword() { return Boolean.TRUE.equals(debeCambiarPassword); }
+    public void setDebeCambiarPassword(boolean debeCambiarPassword) { this.debeCambiarPassword = debeCambiarPassword; }
 
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
     public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }

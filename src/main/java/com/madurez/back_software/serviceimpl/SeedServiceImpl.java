@@ -44,7 +44,7 @@ public class SeedServiceImpl implements SeedService {
     }
 
     private Dominio obtenerOCrearDominio(String nombre, InstrumentoVersion version) {
-        return dominioRepository.findByNombre(nombre).orElseGet(() -> {
+        return dominioRepository.findByNombreAndInstrumentoVersionId(nombre, version.getId()).orElseGet(() -> {
             Dominio d = new Dominio();
             d.setNombre(nombre);
             d.setDescripcion(nombre);

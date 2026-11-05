@@ -72,7 +72,7 @@ public class PreguntaServiceImpl implements PreguntaService {
 
     @Override
     public List<PreguntaResponse> listarPreguntas() {
-        return preguntaRepository.findAll().stream()
+        return preguntaRepository.findByInstrumentoVersionId(obtenerVersionVigenteId()).stream()
                 .map(this::mapearAResponse)
                 .collect(Collectors.toList());
     }
@@ -97,4 +97,14 @@ public class PreguntaServiceImpl implements PreguntaService {
     }
     @Autowired
     private AuditoriaTecnicaService auditoriaTecnicaService;
+
+    @Autowired
+    private com.madurez.back_software.repositories.InstrumentoVersionRepository instrumentoVersionRepository;
+
+    // El catalogo que se muestra y se evalua es el de la version vigente del instrumento
+    private Long obtenerVersionVigenteId() {
+        return instrumentoVersionRepository.findByVigenteTrue()
+                .orElseThrow(() -> new IllegalArgumentException("No hay una versión vigente del instrumento configurada"))
+                .getId();
+    }
 }

@@ -12,8 +12,11 @@ public class EvaluacionResponse {
     private LocalDateTime fechaInicio;
     private LocalDateTime fechaFin;
     private String observacion;
+    private Integer versionInstrumento;
+
     public EvaluacionResponse(Long id, Long organizacionId, String organizacionNombre, Long analistaId,
-                              String estado, LocalDateTime fechaInicio, LocalDateTime fechaFin, String observacion) {
+                              String estado, LocalDateTime fechaInicio, LocalDateTime fechaFin, String observacion,
+                              Integer versionInstrumento) {
         this.id = id;
         this.organizacionId = organizacionId;
         this.organizacionNombre = organizacionNombre;
@@ -22,6 +25,7 @@ public class EvaluacionResponse {
         this.fechaInicio = fechaInicio;
         this.fechaFin = fechaFin;
         this.observacion = observacion;
+        this.versionInstrumento = versionInstrumento;
     }
 
     public Long getId() { return id; }
@@ -32,4 +36,5 @@ public class EvaluacionResponse {
     public LocalDateTime getFechaInicio() { return fechaInicio; }
     public LocalDateTime getFechaFin() { return fechaFin; }
     public String getObservacion() { return observacion; }
+    public Integer getVersionInstrumento() { return versionInstrumento; }
 }

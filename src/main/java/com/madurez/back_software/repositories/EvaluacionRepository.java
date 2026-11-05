@@ -20,4 +20,6 @@ public interface EvaluacionRepository extends JpaRepository<Evaluacion, Long> {
     List<Evaluacion> findByOrganizacionIdAndFechaFinBetweenOrderByFechaFinDesc(
             Long organizacionId, LocalDateTime desde, LocalDateTime hasta);
     List<Evaluacion> findByJefeId(Long jefeId);
+
+    long countByEstado(EstadoEvaluacion estado);
 }

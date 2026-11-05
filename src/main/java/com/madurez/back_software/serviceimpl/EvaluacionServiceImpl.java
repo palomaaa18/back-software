@@ -119,7 +119,8 @@ public class EvaluacionServiceImpl implements EvaluacionService {
         return new EvaluacionResponse(
                 e.getId(), e.getOrganizacion().getId(), e.getOrganizacion().getNombre(),
                 e.getAnalista().getId(), e.getEstado().name(), e.getFechaInicio(), e.getFechaFin(),
-                e.getObservacion()
+                e.getObservacion(),
+                e.getInstrumentoVersion() != null ? e.getInstrumentoVersion().getNumeroVersion() : null
         );
     }
 

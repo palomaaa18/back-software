@@ -53,6 +53,8 @@ public class UsuarioServiceImpl implements UsuarioService {
         nuevoUsuario.setEmail(request.getEmail());
         nuevoUsuario.setPassword(passwordEncoder.encode(request.getPassword()));
         nuevoUsuario.setEstado(EstadoUsuario.ACTIVO);
+        // La contraseña la define quien crea la cuenta: debe cambiarla en su primer inicio de sesión
+        nuevoUsuario.setDebeCambiarPassword(true);
 
         // Reglas de quién puede crear a quién
         if (creador.getRol() == Rol.ADMINISTRADOR) {
@@ -181,5 +183,29 @@ public class UsuarioServiceImpl implements UsuarioService {
                         u.getOrganizacion() != null ? u.getOrganizacion().getNombre() : null
                 ))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public void cambiarPassword(String passwordActual, String passwordNueva, Usuario usuario) {
+        if (passwordActual == null || passwordActual.isEmpty()) {
+            throw new IllegalArgumentException("Debe ingresar la contraseña actual");
+        }
+        if (passwordNueva == null || passwordNueva.length() < 6) {
+            throw new IllegalArgumentException("La nueva contraseña debe tener al menos 6 caracteres");
+        }
+
+        Usuario actual = usuarioRepository.findById(usuario.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+
+        if (!passwordEncoder.matches(passwordActual, actual.getPassword())) {
+            throw new IllegalArgumentException("La contraseña actual es incorrecta");
+        }
+        if (passwordEncoder.matches(passwordNueva, actual.getPassword())) {
+            throw new IllegalArgumentException("La nueva contraseña debe ser distinta de la actual");
+        }
+
+        actual.setPassword(passwordEncoder.encode(passwordNueva));
+        actual.setDebeCambiarPassword(false);
+        usuarioRepository.save(actual);
     }
 }

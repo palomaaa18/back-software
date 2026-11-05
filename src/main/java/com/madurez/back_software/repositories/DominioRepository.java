@@ -10,4 +10,6 @@ public interface DominioRepository extends JpaRepository<Dominio, Long> {
 
     List<Dominio> findByInstrumentoVersionId(Long instrumentoVersionId);
     Optional<Dominio> findByNombre(String nombre);
+
+    Optional<Dominio> findByNombreAndInstrumentoVersionId(String nombre, Long instrumentoVersionId);
 }
