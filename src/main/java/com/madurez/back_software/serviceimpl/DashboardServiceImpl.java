@@ -69,7 +69,7 @@ public class DashboardServiceImpl implements DashboardService {
                 .filter(r -> !r.isEsGlobal())
                 .map(r -> new DashboardResponse.DominioItem(
                         r.getDominio().getId(), r.getDominio().getNombre(),
-                        r.getCoberturaPorcentaje(), r.getDominio().getPesoRelativo()))
+                        ClasificadorNivelMadurez.normalizar(r.getCoberturaPorcentaje()), r.getDominio().getPesoRelativo()))
                 .collect(Collectors.toList());
 
         // HU0030 esc.2: comparar con la evaluación anterior (si existe)
@@ -97,7 +97,7 @@ public class DashboardServiceImpl implements DashboardService {
 
         return new DashboardResponse(
                 organizacion.getId(), organizacion.getNombre(), actual.getFechaFin(),
-                globalActual.getCoberturaPorcentaje(), nombreNivel, tendencia, porDominio
+                ClasificadorNivelMadurez.normalizar(globalActual.getCoberturaPorcentaje()), nombreNivel, tendencia, porDominio
         );
     }
     @Override
@@ -126,8 +126,8 @@ public class DashboardServiceImpl implements DashboardService {
                 .orElseThrow(() -> new IllegalArgumentException("Resultado global no encontrado (anterior)"));
 
         String tendenciaGlobal;
-        if (globalActual.getCoberturaPorcentaje() > globalAnterior.getCoberturaPorcentaje()) tendenciaGlobal = "MEJORO";
-        else if (globalActual.getCoberturaPorcentaje() < globalAnterior.getCoberturaPorcentaje()) tendenciaGlobal = "EMPEORO";
+        if (ClasificadorNivelMadurez.normalizar(globalActual.getCoberturaPorcentaje()) > ClasificadorNivelMadurez.normalizar(globalAnterior.getCoberturaPorcentaje())) tendenciaGlobal = "MEJORO";
+        else if (ClasificadorNivelMadurez.normalizar(globalActual.getCoberturaPorcentaje()) < ClasificadorNivelMadurez.normalizar(globalAnterior.getCoberturaPorcentaje())) tendenciaGlobal = "EMPEORO";
         else tendenciaGlobal = "IGUAL";
 
         // Mapear resultados anteriores por dominio para cruzarlos con los actuales
@@ -139,16 +139,16 @@ public class DashboardServiceImpl implements DashboardService {
                 .filter(r -> !r.isEsGlobal())
                 .map(r -> {
                     Resultado rAnterior = anteriorPorDominio.get(r.getDominio().getId());
-                    double coberturaAnterior = rAnterior != null ? rAnterior.getCoberturaPorcentaje() : 0.0;
-                    double delta = r.getCoberturaPorcentaje() - coberturaAnterior;
+                    double coberturaAnterior = rAnterior != null ? ClasificadorNivelMadurez.normalizar(rAnterior.getCoberturaPorcentaje()) : 0.0;
+                    double delta = ClasificadorNivelMadurez.normalizar(r.getCoberturaPorcentaje()) - coberturaAnterior;
                     return new ComparativaResponse.DeltaDominio(
-                            r.getDominio().getNombre(), r.getCoberturaPorcentaje(), coberturaAnterior, delta);
+                            r.getDominio().getNombre(), ClasificadorNivelMadurez.normalizar(r.getCoberturaPorcentaje()), coberturaAnterior, delta);
                 })
                 .collect(Collectors.toList());
 
         return new ComparativaResponse(
                 actual.getFechaFin(), anterior.getFechaFin(),
-                globalActual.getCoberturaPorcentaje(), globalAnterior.getCoberturaPorcentaje(),
+                ClasificadorNivelMadurez.normalizar(globalActual.getCoberturaPorcentaje()), ClasificadorNivelMadurez.normalizar(globalAnterior.getCoberturaPorcentaje()),
                 nombreNivelDe(globalActual),
                 nombreNivelDe(globalAnterior),
                 tendenciaGlobal, deltas
@@ -174,7 +174,7 @@ public class DashboardServiceImpl implements DashboardService {
 
             return new HistoricoItem(
                     e.getId(), e.getFechaFin(),
-                    global != null ? global.getCoberturaPorcentaje() : null,
+                    global != null ? ClasificadorNivelMadurez.normalizar(global.getCoberturaPorcentaje()) : null,
                     nombreNivelDe(global),
                     e.getEstado().name()
             );
@@ -200,7 +200,7 @@ public class DashboardServiceImpl implements DashboardService {
 
             return new HistoricoItem(
                     e.getId(), e.getFechaFin(),
-                    global != null ? global.getCoberturaPorcentaje() : null,
+                    global != null ? ClasificadorNivelMadurez.normalizar(global.getCoberturaPorcentaje()) : null,
                     nombreNivelDe(global),
                     e.getEstado().name()
             );

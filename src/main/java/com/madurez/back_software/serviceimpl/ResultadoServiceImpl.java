@@ -76,7 +76,7 @@ public class ResultadoServiceImpl implements ResultadoService {
             Resultado resultadoDominio = new Resultado();
             resultadoDominio.setEvaluacion(evaluacion);
             resultadoDominio.setDominio(dominio);
-            resultadoDominio.setCoberturaPorcentaje(coberturaDominio);
+            resultadoDominio.setCoberturaPorcentaje(ClasificadorNivelMadurez.normalizar(coberturaDominio));
             resultadoDominio.setEsGlobal(false);
             resultadosDominio.add(resultadoDominio);
 
@@ -119,7 +119,7 @@ public class ResultadoServiceImpl implements ResultadoService {
                 .map(r -> new ResultadoResponse.ResultadoDominioItem(
                         r.getDominio().getId(),
                         r.getDominio().getNombre(),
-                        r.getCoberturaPorcentaje(),
+                        ClasificadorNivelMadurez.normalizar(r.getCoberturaPorcentaje()),
                         r.getDominio().getPesoRelativo()
                 ))
                 .collect(Collectors.toList());

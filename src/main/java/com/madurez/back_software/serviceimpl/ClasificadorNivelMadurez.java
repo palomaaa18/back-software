@@ -13,9 +13,9 @@ import java.util.List;
  * Determina el nivel de madurez de una cobertura global.
  *
  * Reglas:
- *  - La cobertura se redondea a 2 decimales antes de clasificar: la suma ponderada de coberturas
- *    arrastra error de coma flotante (p. ej. 59.99999999999999 o 100.00000000000001) que dejaba
- *    la evaluación en el nivel equivocado o "Sin clasificar".
+ *  - La cobertura se redondea al entero más cercano (el mismo valor que se muestra en pantalla)
+ *    antes de clasificar y en todo lo que se informa: 59.96% se muestra y se clasifica como 60%.
+ *    Además elimina el error de coma flotante de la suma ponderada (59.99999999999999, 100.00000000000001).
  *  - El valor límite pertenece al nivel cuyo rango empieza en ese valor (60 -> Gestionado, no Definido).
  *  - 100 pertenece al último nivel (Optimizado).
  */
@@ -27,10 +27,10 @@ public class ClasificadorNivelMadurez {
     @Autowired
     private NivelMadurezRepository nivelMadurezRepository;
 
-    /** Redondea a 2 decimales y limita el valor al rango 0-100. */
+    /** Redondea al entero más cercano (mitad hacia arriba) y limita el valor al rango 0-100. */
     public static double normalizar(double cobertura) {
         if (Double.isNaN(cobertura) || Double.isInfinite(cobertura)) return 0.0;
-        double redondeada = BigDecimal.valueOf(cobertura).setScale(2, RoundingMode.HALF_UP).doubleValue();
+        double redondeada = BigDecimal.valueOf(cobertura).setScale(0, RoundingMode.HALF_UP).doubleValue();
         return Math.min(100.0, Math.max(0.0, redondeada));
     }
 
