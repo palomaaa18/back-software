@@ -28,6 +28,9 @@ public class ResultadoServiceImpl implements ResultadoService {
     @Autowired
     private NivelMadurezRepository nivelMadurezRepository;
 
+    @Autowired
+    private ClasificadorNivelMadurez clasificador;
+
     // Conversión de nivel de implementación a valor numérico de cobertura
     private double valorCobertura(NivelImplementacion nivel) {
         return switch (nivel) {
@@ -83,10 +86,10 @@ public class ResultadoServiceImpl implements ResultadoService {
 
         resultadoRepository.saveAll(resultadosDominio);
 
-        // Determinar nivel de madurez según la cobertura global
-        NivelMadurez nivelMadurez = nivelMadurezRepository
-                .findByRangoMinLessThanEqualAndRangoMaxGreaterThanEqual(coberturaGlobal, coberturaGlobal)
-                .orElse(null);
+        // Se redondea para evitar el error de coma flotante de la suma ponderada y se clasifica
+        // con la regla del valor límite (60 -> Gestionado, 100 -> Optimizado)
+        coberturaGlobal = ClasificadorNivelMadurez.normalizar(coberturaGlobal);
+        NivelMadurez nivelMadurez = clasificador.clasificar(coberturaGlobal);
 
         Resultado resultadoGlobal = new Resultado();
         resultadoGlobal.setEvaluacion(evaluacion);
@@ -121,8 +124,11 @@ public class ResultadoServiceImpl implements ResultadoService {
                 ))
                 .collect(Collectors.toList());
 
-        String nombreNivel = global.getNivelMadurez() != null ? global.getNivelMadurez().getNombre() : "Sin clasificar";
+        // El nivel se calcula al consultar: así las evaluaciones ya finalizadas con el nivel mal
+        // asignado (o "Sin clasificar") también se muestran correctamente
+        double coberturaGlobal = ClasificadorNivelMadurez.normalizar(global.getCoberturaPorcentaje());
+        String nombreNivel = clasificador.nombre(coberturaGlobal);
 
-        return new ResultadoResponse(global.getCoberturaPorcentaje(), nombreNivel, porDominio);
+        return new ResultadoResponse(coberturaGlobal, nombreNivel, porDominio);
     }
 }

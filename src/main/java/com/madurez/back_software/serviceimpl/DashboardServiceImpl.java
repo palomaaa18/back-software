@@ -25,6 +25,18 @@ public class DashboardServiceImpl implements DashboardService {
     @Autowired
     private ResultadoRepository resultadoRepository;
 
+    @Autowired
+    private ClasificadorNivelMadurez clasificador;
+
+    // Nivel calculado desde la cobertura (regla de valores límite y redondeo)
+    private NivelMadurez nivelDe(Resultado global) {
+        return global == null ? null : clasificador.clasificar(global.getCoberturaPorcentaje());
+    }
+
+    private String nombreNivelDe(Resultado global) {
+        return global == null ? ClasificadorNivelMadurez.SIN_CLASIFICAR : clasificador.nombre(global.getCoberturaPorcentaje());
+    }
+
     @Override
     public DashboardResponse obtenerDashboard(Long organizacionId, Usuario ejecutor) {
         // HU0029/30: pensado para Gerente general, pero el Jefe y el Administrador
@@ -71,10 +83,9 @@ public class DashboardServiceImpl implements DashboardService {
                     .findFirst()
                     .orElse(null);
 
-            if (globalAnterior != null && globalAnterior.getNivelMadurez() != null
-                    && globalActual.getNivelMadurez() != null) {
-                double rangoActual = globalActual.getNivelMadurez().getRangoMin();
-                double rangoAnterior = globalAnterior.getNivelMadurez().getRangoMin();
+            if (globalAnterior != null && nivelDe(globalAnterior) != null && nivelDe(globalActual) != null) {
+                double rangoActual = nivelDe(globalActual).getRangoMin();
+                double rangoAnterior = nivelDe(globalAnterior).getRangoMin();
 
                 if (rangoActual > rangoAnterior) tendencia = "SUBIO";
                 else if (rangoActual < rangoAnterior) tendencia = "BAJO";
@@ -82,8 +93,7 @@ public class DashboardServiceImpl implements DashboardService {
             }
         }
 
-        String nombreNivel = globalActual.getNivelMadurez() != null
-                ? globalActual.getNivelMadurez().getNombre() : "Sin clasificar";
+        String nombreNivel = nombreNivelDe(globalActual);
 
         return new DashboardResponse(
                 organizacion.getId(), organizacion.getNombre(), actual.getFechaFin(),
@@ -139,8 +149,8 @@ public class DashboardServiceImpl implements DashboardService {
         return new ComparativaResponse(
                 actual.getFechaFin(), anterior.getFechaFin(),
                 globalActual.getCoberturaPorcentaje(), globalAnterior.getCoberturaPorcentaje(),
-                globalActual.getNivelMadurez() != null ? globalActual.getNivelMadurez().getNombre() : "Sin clasificar",
-                globalAnterior.getNivelMadurez() != null ? globalAnterior.getNivelMadurez().getNombre() : "Sin clasificar",
+                nombreNivelDe(globalActual),
+                nombreNivelDe(globalAnterior),
                 tendenciaGlobal, deltas
         );
     }
@@ -165,7 +175,7 @@ public class DashboardServiceImpl implements DashboardService {
             return new HistoricoItem(
                     e.getId(), e.getFechaFin(),
                     global != null ? global.getCoberturaPorcentaje() : null,
-                    global != null && global.getNivelMadurez() != null ? global.getNivelMadurez().getNombre() : "Sin clasificar",
+                    nombreNivelDe(global),
                     e.getEstado().name()
             );
         }).collect(Collectors.toList());
@@ -191,7 +201,7 @@ public class DashboardServiceImpl implements DashboardService {
             return new HistoricoItem(
                     e.getId(), e.getFechaFin(),
                     global != null ? global.getCoberturaPorcentaje() : null,
-                    global != null && global.getNivelMadurez() != null ? global.getNivelMadurez().getNombre() : "Sin clasificar",
+                    nombreNivelDe(global),
                     e.getEstado().name()
             );
         }).collect(Collectors.toList());
